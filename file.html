@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1e40af" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>IIT Foundation OMR Scanner &amp; School Portal (Classes 6–10)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .tab-btn.active {
+      background-color: #1e40af;
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(30, 64, 175, 0.3);
+    }
+    .mobile-nav-btn.active {
+      color: #1e40af;
+      font-weight: 700;
+    }
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printable-omr-container, #printable-omr-container * {
+        visibility: visible !important;
+      }
+      #printable-omr-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ======================================================================= -->
+  <!-- AUTHENTICATION GATE (SCHOOL LOGIN / OWNER LOGIN / OTP PASSWORD RESET)   -->
+  <!-- ======================================================================= -->
+  <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+      <!-- Auth Header -->
+      <div class="bg-blue-700 px-6 py-5 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center font-extrabold text-base">
+            OMR
+          </div>
+          <div>
+            <h1 class="text-base font-bold leading-tight">IIT Foundation OMR Portal</h1>
+            <p class="text-[11px] text-blue-100">Phone Web • Mobile App • Desktop</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold uppercase tracking-wider bg-blue-800/80 px-2.5 py-1 rounded-full">Classes 6–10</span>
+      </div>
+
+      <!-- Auth Mode Switcher -->
+      <div class="px-6 pt-5">
+        <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
+          <button type="button" id="auth-mode-school" class="py-2 rounded-lg text-xs font-bold bg-white text-blue-800 shadow-sm transition">
+            School Login
+          </button>
+          <button type="button" id="auth-mode-owner" class="py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+            App Owner Admin
+          </button>
+        </div>
+      </div>
+
+      <!-- View 1: School Login Form -->
+      <form id="form-school-login" class="p-6 space-y-4">
+        <div>
+          <label for="login-school-name" class="block text-xs font-semibold text-slate-700 mb-1">School Name</label>
+          <input id="login-school-name" type="text" list="registered-schools-list" placeholder="e.g. Padmalaya High School" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          <datalist id="registered-schools-list"></datalist>
+        </div>
+        <div>
+          <label for="login-school-email" class="block text-xs font-semibold text-slate-700 mb-1">School Mail ID</label>
+          <input id="login-school-email" type="email" placeholder="admin@padmalaya.edu.in" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label for="login-school-pass" class="block text-xs font-semibold text-slate-700">Password</label>
+            <button type="button" id="btn-open-forgot" class="text-xs font-semibold text-blue-700 hover:underline">Forgot Password / Details?</button>
+          </div>
+          <input id="login-school-pass" type="password" placeholder="Enter password" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <p id="school-login-error" class="text-xs text-rose-600 font-semibold hidden"></p>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold shadow-sm transition">
+          Login to OMR Scanner
+        </button>
+
+        <div class="pt-2 border-t border-slate-100">
+          <p class="text-[11px] text-slate-500 mb-2 font-medium">Quick Demo School Credentials:</p>
+          <button type="button" id="btn-demo-school" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold text-left flex items-center justify-between transition">
+            <span>Padmalaya High School (admin@padmalaya.edu.in)</span>
+            <span class="text-blue-700 font-bold">Auto-Fill</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- View 2: App Owner Login Form -->
+      <form id="form-owner-login" class="p-6 space-y-4 hidden">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+          <strong>App Owner Panel:</strong> Monitor all school logins, active devices, and OMR sheet scan counts.
+        </div>
+        <div>
+          <label for="login-owner-email" class="block text-xs font-semibold text-slate-700 mb-1">Owner Email ID</label>
+          <input id="login-owner-email" type="email" placeholder="owner@omrportal.in" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label for="login-owner-pass" class="block text-xs font-semibold text-slate-700 mb-1">Owner Master Password</label>
+          <input id="login-owner-pass" type="password" placeholder="Enter owner password" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <p id="owner-login-error" class="text-xs text-rose-600 font-semibold hidden"></p>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow-sm transition">
+          Login as App Owner
+        </button>
+
+        <div class="pt-2 border-t border-slate-100">
+          <button type="button" id="btn-demo-owner" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold text-left flex items-center justify-between transition">
+            <span>Demo Owner (owner@omrportal.in / admin123)</span>
+            <span class="text-blue-700 font-bold">Auto-Fill</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- View 3: Forgot Password / OTP Recovery Flow -->
+      <div id="form-forgot-otp" class="p-6 space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-slate-900">Recover Account via Email OTP</h2>
+          <button type="button" id="btn-back-login" class="text-xs font-semibold text-blue-700 hover:underline">Back to Login</button>
+        </div>
+
+        <!-- Step 1: Enter School Email -->
+        <div id="otp-step-1" class="space-y-3">
+          <p class="text-xs text-slate-500">Enter your registered School Mail ID. We will send a 6-digit OTP to verify and let you set a new password.</p>
+          <div>
+            <label for="otp-email-input" class="block text-xs font-semibold text-slate-700 mb-1">Registered School Mail ID</label>
+            <input id="otp-email-input" type="email" placeholder="admin@padmalaya.edu.in" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <p id="otp-step1-err" class="text-xs text-rose-600 font-semibold hidden"></p>
+          <button type="button" id="btn-send-otp" class="w-full py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold transition">
+            Send OTP to Mail
+          </button>
+        </div>
+
+        <!-- Step 2: Verify OTP & Reset Password -->
+        <div id="otp-step-2" class="space-y-3 hidden">
+          <div id="otp-demo-inbox" class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900">
+            <div class="font-bold">Simulated Mail Inbox Preview</div>
+            <p class="mt-0.5">School: <span id="otp-found-school" class="font-semibold"></span></p>
+            <p>Your 6-digit OTP is: <strong id="otp-preview-code" class="text-sm tracking-widest bg-white px-2 py-0.5 rounded border border-emerald-300"></strong></p>
+          </div>
+          <div>
+            <label for="otp-code-input" class="block text-xs font-semibold text-slate-700 mb-1">Enter 6-Digit OTP</label>
+            <input id="otp-code-input" type="text" maxlength="6" placeholder="123456" class="w-full px-3.5 py-2.5 text-sm tracking-widest font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label for="otp-new-pass" class="block text-xs font-semibold text-slate-700 mb-1">Set New Password</label>
+            <input id="otp-new-pass" type="password" placeholder="Minimum 6 characters" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <p id="otp-step2-err" class="text-xs text-rose-600 font-semibold hidden"></p>
+          <button type="button" id="btn-verify-reset" class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold transition">
+            Verify OTP &amp; Re-Login
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MAIN APP SHELL (SHOWN AFTER LOGIN)                                      -->
+  <!-- ======================================================================= -->
+  <div id="app-shell" class="hidden min-h-screen flex-col pb-16 md:pb-0">
+    <!-- Top Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-700 text-white flex items-center justify-center font-extrabold text-sm shadow-sm">
+            OMR
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm sm:text-base font-bold text-slate-900 leading-tight" id="header-school-name">IIT Foundation OMR Grader</h1>
+              <span id="header-role-badge" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">School</span>
+            </div>
+            <p class="text-[11px] text-slate-500" id="header-user-email">Classes 6th – 10th • Printer-Scan Evaluator</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl" aria-label="Main Tabs">
+          <button type="button" data-tab="scan" class="tab-btn active px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            Scan &amp; Grade
+          </button>
+          <button type="button" data-tab="key" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white/70 transition">
+            Answer Key
+          </button>
+          <button type="button" data-tab="print" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white/70 transition">
+            Print OMR Sheet
+          </button>
+          <button type="button" data-tab="results" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white/70 transition">
+            Class Results (<span id="nav-result-count">0</span>)
+          </button>
+          <button type="button" data-tab="admin" id="desktop-admin-tab" class="tab-btn hidden px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-800 bg-amber-100/80 hover:bg-amber-200/70 transition">
+            Owner Admin Panel
+          </button>
+        </nav>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-logout" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition">
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Active Exam Banner -->
+    <div class="bg-blue-50 border-b border-blue-100 no-print">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-blue-900">
+          <span class="font-semibold" id="banner-exam-title">IIT Foundation Weekly Test</span>
+          <span class="text-blue-300">|</span>
+          <span>Class: <strong id="banner-class">8th Class</strong></span>
+          <span class="text-blue-300">|</span>
+          <span>Questions: <strong id="banner-qcount">60</strong> (MPC)</span>
+          <span class="text-blue-300">|</span>
+          <span>Marking: <strong id="banner-marking">+4 / -1</strong></span>
+        </div>
+        <button type="button" id="btn-go-key" class="text-blue-700 hover:text-blue-900 font-semibold underline underline-offset-2 text-xs">
+          Edit Exam &amp; Key
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">
+      <!-- TAB 1: SCAN & GRADE -->
+      <section id="tab-scan" class="tab-panel space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left Column: Upload & Controls -->
+          <div class="lg:col-span-5 space-y-5">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <h2 class="text-base font-bold text-slate-900 mb-1">Upload Printer-Scanned OMR Sheets</h2>
+              <p class="text-xs text-slate-500 mb-4">
+                Upload scanned OMR images (PNG, JPG, WebP) from a printer scanner or phone camera.
+              </p>
+
+              <label id="drop-zone" for="omr-file-input" class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 rounded-xl p-6 text-center cursor-pointer transition">
+                <svg class="w-10 h-10 text-blue-600 mb-2" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                <span class="text-sm font-semibold text-blue-900">Tap to upload scanned sheets or drag &amp; drop</span>
+                <span class="text-xs text-slate-500 mt-1">Supports batch scanning (multiple files at once)</span>
+                <input id="omr-file-input" type="file" accept="image/*" multiple class="hidden" />
+              </label>
+
+              <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="text-xs font-semibold text-slate-700">No physical scan handy?</p>
+                  <p class="text-[11px] text-slate-500">Test the computer-vision scanner with a realistic filled sheet.</p>
+                </div>
+                <button type="button" id="btn-generate-sample" class="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+                  Generate &amp; Scan Test Sheet
+                </button>
+              </div>
+            </div>
+
+            <!-- Sensitivity / Scanner Tuning -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900">Scanner Sensitivity</h3>
+                <span id="threshold-val-label" class="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">38% Fill</span>
+              </div>
+              <input id="fill-threshold-slider" type="range" min="20" max="65" value="38" class="w-full accent-blue-700 cursor-pointer" />
+              <p class="text-[11px] text-slate-500">
+                Adjusts how dark a bubble must be to count as filled. Lower for light pencil; raise for printer smudges.
+              </p>
+            </div>
+
+            <!-- Current Student Scorecard -->
+            <div id="scorecard-panel" class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hidden">
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <span class="inline-block text-[11px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded mb-1">Student Scorecard</span>
+                  <h3 class="text-lg font-extrabold text-slate-900">Roll No: <span id="sc-roll">----</span></h3>
+                  <p class="text-xs text-slate-500"><span id="sc-class">8th Class</span> • Set <span id="sc-set">A</span> • <span id="sc-filename" class="italic"></span></p>
+                </div>
+                <div class="text-right">
+                  <div class="text-2xl font-black text-blue-700" id="sc-total">0 / 240</div>
+                  <div class="text-xs font-semibold text-slate-500" id="sc-percent">0% Accuracy</div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 mb-4" id="sc-subjects"></div>
+
+              <div class="grid grid-cols-4 gap-2 text-center bg-slate-50 rounded-xl p-2.5 text-xs mb-4">
+                <div>
+                  <div class="font-bold text-emerald-700 text-sm" id="sc-correct">0</div>
+                  <div class="text-slate-500">Correct</div>
+                </div>
+                <div>
+                  <div class="font-bold text-rose-600 text-sm" id="sc-wrong">0</div>
+                  <div class="text-slate-500">Wrong</div>
+                </div>
+                <div>
+                  <div class="font-bold text-slate-600 text-sm" id="sc-blank">0</div>
+                  <div class="text-slate-500">Blank</div>
+                </div>
+                <div>
+                  <div class="font-bold text-amber-600 text-sm" id="sc-double">0</div>
+                  <div class="text-slate-500">Double</div>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-3 flex flex-wrap items-center gap-2">
+                <label for="sc-edit-roll" class="text-xs font-semibold text-slate-600">Fix Roll No / Name:</label>
+                <input id="sc-edit-roll" type="text" maxlength="12" placeholder="e.g. 0814" class="flex-1 min-w-[100px] px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="button" id="btn-save-roll" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-lg transition">
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Visual Inspection Overlay -->
+          <div class="lg:col-span-7">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-full flex flex-col">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900">Scanned Sheet Inspection</h2>
+                  <p class="text-xs text-slate-500" id="scan-status-text">Upload a scanned OMR sheet or generate a test scan to see bubble detection.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                  <span class="flex items-center gap-1 text-emerald-700"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Correct</span>
+                  <span class="flex items-center gap-1 text-rose-600"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Wrong</span>
+                  <span class="flex items-center gap-1 text-blue-700"><span class="w-2.5 h-2.5 rounded-full border-2 border-blue-600 inline-block"></span> Key</span>
+                  <span class="flex items-center gap-1 text-amber-600"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Blank/Multi</span>
+                </div>
+              </div>
+
+              <div class="flex-1 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center p-3 overflow-auto min-h-[420px]">
+                <canvas id="inspection-canvas" class="max-w-full h-auto rounded shadow-sm bg-white"></canvas>
+              </div>
+
+              <div id="question-audit-strip" class="mt-4 hidden">
+                <h4 class="text-xs font-bold text-slate-700 mb-2">Question-by-Question Audit</h4>
+                <div id="question-audit-grid" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-h-40 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: ANSWER KEY & EXAM SETUP -->
+      <section id="tab-key" class="tab-panel hidden space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h2 class="text-base font-bold text-slate-900 mb-4">Exam Configuration &amp; Marking Scheme</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="lg:col-span-2">
+              <label for="cfg-exam-title" class="block text-xs font-semibold text-slate-700 mb-1">Exam Name</label>
+              <input id="cfg-exam-title" type="text" value="IIT Foundation Weekly Test" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label for="cfg-class" class="block text-xs font-semibold text-slate-700 mb-1">Target Class</label>
+              <select id="cfg-class" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="6th Class">6th Class</option>
+                <option value="7th Class">7th Class</option>
+                <option value="8th Class" selected>8th Class</option>
+                <option value="9th Class">9th Class</option>
+                <option value="10th Class">10th Class</option>
+              </select>
+            </div>
+            <div>
+              <label for="cfg-qcount" class="block text-xs font-semibold text-slate-700 mb-1">Total Questions (MPC)</label>
+              <select id="cfg-qcount" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="30">30 Questions (10 M / 10 P / 10 C)</option>
+                <option value="60" selected>60 Questions (20 M / 20 P / 20 C)</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label for="cfg-pos" class="block text-xs font-semibold text-slate-700 mb-1">+ Correct</label>
+                <input id="cfg-pos" type="number" step="0.5" value="4" class="w-full px-2.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              </div>
+              <div>
+                <label for="cfg-neg" class="block text-xs font-semibold text-slate-700 mb-1">- Wrong</label>
+                <input id="cfg-neg" type="number" step="0.5" value="1" class="w-full px-2.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Answer Key Editor</h2>
+              <p class="text-xs text-slate-500">Select the Question Paper Set and tap the correct option (A, B, C, or D).</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="flex bg-slate-100 p-1 rounded-lg" id="key-set-tabs">
+                <button type="button" data-set="A" class="set-tab-btn px-3 py-1 rounded-md text-xs font-bold bg-blue-700 text-white">Set A</button>
+                <button type="button" data-set="B" class="set-tab-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600">Set B</button>
+                <button type="button" data-set="C" class="set-tab-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600">Set C</button>
+                <button type="button" data-set="D" class="set-tab-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600">Set D</button>
+              </div>
+              <button type="button" id="btn-randomize-key" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition">
+                Randomize Set Key
+              </button>
+            </div>
+          </div>
+
+          <div id="answer-key-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PRINT OMR SHEET -->
+      <section id="tab-print" class="tab-panel hidden space-y-5">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3 no-print">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Printable IIT Foundation OMR Sheet</h2>
+            <p class="text-xs text-slate-500">Print on A4 paper or download as PNG. The 4 corner squares enable automatic printer-scan alignment.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="btn-download-blank-omr" class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition">
+              Download Blank PNG
+            </button>
+            <button type="button" id="btn-print-omr" class="px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold transition">
+              Print OMR Sheet (A4)
+            </button>
+          </div>
+        </div>
+
+        <div id="printable-omr-container" class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex justify-center overflow-auto">
+          <canvas id="blank-omr-canvas" class="max-w-full h-auto border border-slate-300"></canvas>
+        </div>
+      </section>
+
+      <!-- TAB 4: CLASS RESULTS -->
+      <section id="tab-results" class="tab-panel hidden space-y-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Students Scanned</p>
+            <p class="text-2xl font-black text-slate-900 mt-1" id="kpi-count">0</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Class Average</p>
+            <p class="text-2xl font-black text-blue-700 mt-1" id="kpi-avg">0</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Highest Score</p>
+            <p class="text-2xl font-black text-emerald-700 mt-1" id="kpi-high">0</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Average Accuracy</p>
+            <p class="text-2xl font-black text-indigo-700 mt-1" id="kpi-acc">0%</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-900 mb-3">Subject-Wise Average Marks</h3>
+            <div class="relative h-64">
+              <canvas id="subject-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <input id="filter-search" type="text" placeholder="Search Roll No..." class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                <select id="filter-class" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="ALL">All Classes</option>
+                  <option value="6th Class">6th Class</option>
+                  <option value="7th Class">7th Class</option>
+                  <option value="8th Class">8th Class</option>
+                  <option value="9th Class">9th Class</option>
+                  <option value="10th Class">10th Class</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" id="btn-export-csv" class="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition">
+                  Export CSV / Excel
+                </button>
+                <button type="button" id="btn-clear-results" class="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition">
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto flex-1">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[11px]">
+                    <th class="py-2.5 px-2">Rank</th>
+                    <th class="py-2.5 px-2">Roll No</th>
+                    <th class="py-2.5 px-2">Class</th>
+                    <th class="py-2.5 px-2">Set</th>
+                    <th class="py-2.5 px-2">Maths</th>
+                    <th class="py-2.5 px-2">Physics</th>
+                    <th class="py-2.5 px-2">Chem</th>
+                    <th class="py-2.5 px-2">Total</th>
+                    <th class="py-2.5 px-2">C / W / B</th>
+                    <th class="py-2.5 px-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="results-tbody" class="divide-y divide-slate-100">
+                  <tr>
+                    <td colspan="10" class="py-8 text-center text-slate-400">No OMR sheets scanned yet. Upload a scan or generate a test sheet in Scan &amp; Grade.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: APP OWNER ADMIN PANEL -->
+      <section id="tab-admin" class="tab-panel hidden space-y-6">
+        <!-- Admin KPIs -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Registered Schools</p>
+            <p class="text-2xl font-black text-slate-900 mt-1" id="adm-kpi-schools">0</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Active Schools</p>
+            <p class="text-2xl font-black text-emerald-700 mt-1" id="adm-kpi-active">0</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Total Sheets Scanned</p>
+            <p class="text-2xl font-black text-blue-700 mt-1" id="adm-kpi-scans">0</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500">Recent Login Events</p>
+            <p class="text-2xl font-black text-indigo-700 mt-1" id="adm-kpi-logins">0</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- School Logins & Usage Table -->
+          <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">School Accounts &amp; Usage Monitor</h2>
+                <p class="text-xs text-slate-500">Manage school credentials, see how many OMR sheets each school scanned, and toggle access.</p>
+              </div>
+              <button type="button" id="btn-open-add-school" class="px-3.5 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold transition">
+                + Add New School
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[11px]">
+                    <th class="py-2.5 px-2">School Name</th>
+                    <th class="py-2.5 px-2">School Mail ID</th>
+                    <th class="py-2.5 px-2">Status</th>
+                    <th class="py-2.5 px-2">Last Login &amp; Device</th>
+                    <th class="py-2.5 px-2">Sheets Scanned</th>
+                    <th class="py-2.5 px-2 text-right">Controls</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-schools-tbody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Login & Scan Activity Feed -->
+          <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
+            <h3 class="text-sm font-bold text-slate-900 mb-1">School Login &amp; Usage Log</h3>
+            <p class="text-xs text-slate-500 mb-3">Tracks logins across Phone Web, App, and Desktop.</p>
+            <div id="admin-activity-feed" class="space-y-2.5 max-h-96 overflow-y-auto pr-1 text-xs"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Mobile Bottom App Bar (Phone Web & Mobile App Feel) -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-30 flex items-center justify-around py-2 px-1 no-print" aria-label="Mobile Navigation">
+      <button type="button" data-tab="scan" class="mobile-nav-btn active flex flex-col items-center text-[10px] text-slate-600 px-2 py-1">
+        <span class="font-bold">Scan</span>
+      </button>
+      <button type="button" data-tab="key" class="mobile-nav-btn flex flex-col items-center text-[10px] text-slate-600 px-2 py-1">
+        <span>Key</span>
+      </button>
+      <button type="button" data-tab="print" class="mobile-nav-btn flex flex-col items-center text-[10px] text-slate-600 px-2 py-1">
+        <span>Print OMR</span>
+      </button>
+      <button type="button" data-tab="results" class="mobile-nav-btn flex flex-col items-center text-[10px] text-slate-600 px-2 py-1">
+        <span>Results</span>
+      </button>
+      <button type="button" data-tab="admin" id="mobile-admin-tab" class="mobile-nav-btn hidden flex flex-col items-center text-[10px] text-amber-700 px-2 py-1">
+        <span>Admin</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Add New School Modal (Owner Admin) -->
+  <div id="add-school-modal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+    <form id="form-add-school" class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-3.5">
+      <h3 class="text-base font-bold text-slate-900">Register New School</h3>
+      <div>
+        <label for="new-school-name" class="block text-xs font-semibold text-slate-700 mb-1">School Name</label>
+        <input id="new-school-name" type="text" required placeholder="e.g. Narayana IIT Academy" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+      </div>
+      <div>
+        <label for="new-school-email" class="block text-xs font-semibold text-slate-700 mb-1">School Mail ID</label>
+        <input id="new-school-email" type="email" required placeholder="exams@school.edu.in" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+      </div>
+      <div>
+        <label for="new-school-pass" class="block text-xs font-semibold text-slate-700 mb-1">Initial Password</label>
+        <input id="new-school-pass" type="text" required value="school123" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="btn-cancel-add-school" class="px-3.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+        <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-blue-700 text-xs font-semibold text-white hover:bg-blue-800">Create Account</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- In-Page Confirmation Modal -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4">
+      <h3 class="text-base font-bold text-slate-900" id="modal-title">Confirm Action</h3>
+      <p class="text-xs text-slate-600" id="modal-message">Are you sure?</p>
+      <div class="flex justify-end gap-2">
+        <button type="button" id="modal-cancel" class="px-3.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+        <button type="button" id="modal-confirm" class="px-3.5 py-1.5 rounded-lg bg-rose-600 text-xs font-semibold text-white hover:bg-rose-700">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-16 md:bottom-5 right-5 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50"></div>
+
+  <script>
+    // =========================================================================
+    // CANONICAL OMR TEMPLATE GEOMETRY (800 x 1120)
+    // =========================================================================
+    const SHEET_W = 800;
+    const SHEET_H = 1120;
+    const MARKER_SIZE = 24;
+    const MARKER_MARGIN = 26;
+    const FIDUCIALS = [
+      { x: MARKER_MARGIN + MARKER_SIZE / 2, y: MARKER_MARGIN + MARKER_SIZE / 2 },
+      { x: SHEET_W - MARKER_MARGIN - MARKER_SIZE / 2, y: MARKER_MARGIN + MARKER_SIZE / 2 },
+      { x: MARKER_MARGIN + MARKER_SIZE / 2, y: SHEET_H - MARKER_MARGIN - MARKER_SIZE / 2 },
+      { x: SHEET_W - MARKER_MARGIN - MARKER_SIZE / 2, y: SHEET_H - MARKER_MARGIN - MARKER_SIZE / 2 }
+    ];
+
+    const OPTIONS = ['A', 'B', 'C', 'D'];
+    const CLASSES = ['6th Class', '7th Class', '8th Class', '9th Class', '10th Class'];
+    const SETS = ['A', 'B', 'C', 'D'];
+
+    const STORAGE_KEY = 'iit_omr_portal_v1';
+
+    // Default Registered Schools & Owner Credentials
+    const defaultSchools = [
+      {
+        id: 'sch_padmalaya',
+        name: 'Padmalaya High School',
+        email: 'admin@padmalaya.edu.in',
+        password: 'padma123',
+        active: true,
+        scansCount: 142,
+        lastLogin: 'Today, 10:15 AM',
+        lastDevice: 'Desktop Web'
+      },
+      {
+        id: 'sch_vidya',
+        name: 'Sri Vidya IIT Foundation',
+        email: 'exams@srividya.edu.in',
+        password: 'vidya123',
+        active: true,
+        scansCount: 89,
+        lastLogin: 'Yesterday, 4:40 PM',
+        lastDevice: 'Phone Web'
+      },
+      {
+        id: 'sch_pragathi',
+        name: 'Pragathi Techno School',
+        email: 'principal@pragathi.edu.in',
+        password: 'pragathi123',
+        active: false,
+        scansCount: 34,
+        lastLogin: 'Nov 14, 2:10 PM',
+        lastDevice: 'Desktop Web'
+      }
+    ];
+
+    const defaultActivityLogs = [
+      { time: 'Today, 10:15 AM', school: 'Padmalaya High School', action: 'Logged in & scanned 24 Class 8th sheets', device: 'Desktop Web' },
+      { time: 'Yesterday, 4:40 PM', school: 'Sri Vidya IIT Foundation', action: 'Logged in & exported Class 9th CSV', device: 'Phone Web' },
+      { time: 'Nov 14, 2:10 PM', school: 'Pragathi Techno School', action: 'Updated Answer Key (Set B)', device: 'Desktop Web' }
+    ];
+
+    // Application State
+    const state = {
+      session: null, // { role: 'school' | 'owner', schoolId, schoolName, email }
+      schools: [...defaultSchools],
+      activityLogs: [...defaultActivityLogs],
+      pendingOtp: null, // { email, code, schoolId }
+      examTitle: 'IIT Foundation Weekly Test',
+      targetClass: '8th Class',
+      questionCount: 60,
+      posMarks: 4,
+      negMarks: 1,
+      activeKeySet: 'A',
+      fillThreshold: 0.38,
+      answerKeys: { A: [], B: [], C: [], D: [] },
+      results: [],
+      selectedResultId: null,
+      chartInstance: null,
+      pendingModalAction: null
+    };
+
+    function detectDeviceLabel() {
+      return window.innerWidth < 768 ? 'Phone Web / App' : 'Desktop Web';
+    }
+
+    function formatNowTime() {
+      const d = new Date();
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function savePortalData() {
+      try {
+        const payload = {
+          schools: state.schools,
+          activityLogs: state.activityLogs,
+          session: state.session
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) { /* Ignore storage errors in restricted environments */ }
+    }
+
+    function loadPortalData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.schools) && parsed.schools.length) state.schools = parsed.schools;
+        if (Array.isArray(parsed.activityLogs)) state.activityLogs = parsed.activityLogs;
+        if (parsed.session) state.session = parsed.session;
+      } catch (e) { /* Ignore */ }
+    }
+
+    function initAnswerKeys() {
+      const seedPatterns = {
+        A: ['B','C','A','D','B','A','C','D','A','B','C','D','B','A','C','D','A','C','B','D'],
+        B: ['A','D','B','C','A','C','D','B','C','A','D','B','A','C','D','B','C','A','B','D'],
+        C: ['C','A','D','B','C','B','A','D','B','C','A','D','C','B','A','D','B','D','C','A'],
+        D: ['D','B','C','A','D','C','B','A','D','B','C','A','D','C','B','A','D','B','A','C']
+      };
+      SETS.forEach(s => {
+        state.answerKeys[s] = [];
+        for (let i = 0; i < 60; i++) {
+          state.answerKeys[s].push(seedPatterns[s][i % 20]);
+        }
+      });
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('opacity-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('opacity-0'), 2800);
+    }
+
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-message').textContent = message;
+      state.pendingModalAction = onConfirm;
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      state.pendingModalAction = null;
+    }
+
+    // =========================================================================
+    // AUTHENTICATION & ADMIN PANEL LOGIC
+    // =========================================================================
+    function populateSchoolDatalist() {
+      const dl = document.getElementById('registered-schools-list');
+      dl.innerHTML = state.schools.map(s => `<option value="${s.name}"></option>`).join('');
+    }
+
+    function enterAppSession(sessionObj) {
+      state.session = sessionObj;
+      savePortalData();
+
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      document.getElementById('app-shell').classList.add('flex');
+
+      const isOwner = sessionObj.role === 'owner';
+      document.getElementById('header-school-name').textContent = isOwner ? 'App Owner Console' : sessionObj.schoolName;
+      document.getElementById('header-user-email').textContent = sessionObj.email + ' • ' + detectDeviceLabel();
+
+      const roleBadge = document.getElementById('header-role-badge');
+      roleBadge.textContent = isOwner ? 'App Owner' : 'School';
+      roleBadge.className = isOwner
+        ? 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800'
+        : 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-800';
+
+      document.getElementById('desktop-admin-tab').classList.toggle('hidden', !isOwner);
+      document.getElementById('mobile-admin-tab').classList.toggle('hidden', !isOwner);
+
+      if (isOwner) {
+        renderAdminPanel();
+        switchTab('admin');
+      } else {
+        switchTab('scan');
+      }
+    }
+
+    function logoutSession() {
+      state.session = null;
+      savePortalData();
+      document.getElementById('app-shell').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('flex');
+      document.getElementById('auth-screen').classList.remove('hidden');
+      document.getElementById('school-login-error').classList.add('hidden');
+      document.getElementById('owner-login-error').classList.add('hidden');
+    }
+
+    function logActivity(schoolName, action) {
+      state.activityLogs.unshift({
+        time: 'Today, ' + formatNowTime(),
+        school: schoolName,
+        action,
+        device: detectDeviceLabel()
+      });
+      if (state.activityLogs.length > 40) state.activityLogs.pop();
+      savePortalData();
+    }
+
+    function renderAdminPanel() {
+      const totalSchools = state.schools.length;
+      const activeSchools = state.schools.filter(s => s.active).length;
+      const totalScans = state.schools.reduce((sum, s) => sum + s.scansCount, 0);
+
+      document.getElementById('adm-kpi-schools').textContent = totalSchools;
+      document.getElementById('adm-kpi-active').textContent = activeSchools;
+      document.getElementById('adm-kpi-scans').textContent = totalScans;
+      document.getElementById('adm-kpi-logins').textContent = state.activityLogs.length;
+
+      const tbody = document.getElementById('admin-schools-tbody');
+      tbody.innerHTML = state.schools.map(s => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-2 font-bold text-slate-900">${s.name}</td>
+          <td class="py-3 px-2 text-slate-600">${s.email}</td>
+          <td class="py-3 px-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-700'}">
+              ${s.active ? 'Active' : 'Suspended'}
+            </span>
+          </td>
+          <td class="py-3 px-2 text-slate-600">
+            <div>${s.lastLogin}</div>
+            <div class="text-[10px] text-slate-400">${s.lastDevice}</div>
+          </td>
+          <td class="py-3 px-2 font-extrabold text-blue-700">${s.scansCount}</td>
+          <td class="py-3 px-2 text-right space-x-2 whitespace-nowrap">
+            <button type="button" data-toggle-school="${s.id}" class="toggle-school-btn text-xs font-semibold ${s.active ? 'text-rose-600 hover:underline' : 'text-emerald-700 hover:underline'}">
+              ${s.active ? 'Suspend' : 'Activate'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      const feed = document.getElementById('admin-activity-feed');
+      feed.innerHTML = state.activityLogs.map(log => `
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
+            <span>${log.time}</span>
+            <span class="font-semibold text-slate-500">${log.device}</span>
+          </div>
+          <div class="font-bold text-slate-800">${log.school}</div>
+          <div class="text-slate-600 mt-0.5">${log.action}</div>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================================
+    // GEOMETRY LAYOUT CALCULATOR
+    // =========================================================================
+    function getTemplateLayout(qCount) {
+      const layout = {
+        classBubbles: [],
+        setBubbles: [],
+        rollBubbles: [],
+        questions: []
+      };
+
+      CLASSES.forEach((cls, idx) => {
+        layout.classBubbles.push({
+          label: cls,
+          shortLabel: String(6 + idx),
+          x: 112 + idx * 44,
+          y: 168,
+          r: 10
+        });
+      });
+
+      SETS.forEach((s, idx) => {
+        layout.setBubbles.push({
+          label: s,
+          x: 112 + idx * 44,
+          y: 218,
+          r: 10
+        });
+      });
+
+      for (let col = 0; col < 4; col++) {
+        const colArr = [];
+        for (let digit = 0; digit <= 9; digit++) {
+          colArr.push({
+            col,
+            digit,
+            x: 505 + col * 36,
+            y: 160 + digit * 21,
+            r: 8.5
+          });
+        }
+        layout.rollBubbles.push(colArr);
+      }
+
+      const perSubject = qCount / 3;
+      const colStartX = [78, 318, 558];
+      const startY = 445;
+      const rowStep = qCount === 30 ? 48 : 29;
+
+      for (let q = 0; q < qCount; q++) {
+        const subjIdx = Math.floor(q / perSubject);
+        const rowIdx = q % perSubject;
+        const baseX = colStartX[subjIdx];
+        const y = startY + rowIdx * rowStep;
+        const options = OPTIONS.map((opt, oIdx) => ({
+          option: opt,
+          x: baseX + 46 + oIdx * 34,
+          y,
+          r: 9.5
+        }));
+        layout.questions.push({
+          qNum: q + 1,
+          subject: subjIdx === 0 ? 'Maths' : subjIdx === 1 ? 'Physics' : 'Chemistry',
+          labelX: baseX,
+          y,
+          options
+        });
+      }
+
+      return layout;
+    }
+
+    // =========================================================================
+    // DRAW BLANK (OR FILLED TEST) OMR SHEET ON A CANVAS
+    // =========================================================================
+    function renderOMRSheetToCanvas(canvas, options = {}) {
+      const { filledData = null, skewDeg = 0, addNoise = false } = options;
+      canvas.width = SHEET_W;
+      canvas.height = SHEET_H;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, SHEET_W, SHEET_H);
+
+      ctx.save();
+      if (skewDeg !== 0) {
+        ctx.translate(SHEET_W / 2, SHEET_H / 2);
+        ctx.rotate((skewDeg * Math.PI) / 180);
+        ctx.translate(-SHEET_W / 2, -SHEET_H / 2);
+      }
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(MARKER_MARGIN, MARKER_MARGIN, MARKER_SIZE, MARKER_SIZE);
+      ctx.fillRect(SHEET_W - MARKER_MARGIN - MARKER_SIZE, MARKER_MARGIN, MARKER_SIZE, MARKER_SIZE);
+      ctx.fillRect(MARKER_MARGIN, SHEET_H - MARKER_MARGIN - MARKER_SIZE, MARKER_SIZE, MARKER_SIZE);
+      ctx.fillRect(SHEET_W - MARKER_MARGIN - MARKER_SIZE, SHEET_H - MARKER_MARGIN - MARKER_SIZE, MARKER_SIZE, MARKER_SIZE);
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(64, 58, SHEET_W - 128, SHEET_H - 116);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 20px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(state.examTitle.toUpperCase(), SHEET_W / 2, 92);
+
+      ctx.font = '600 13px Inter, sans-serif';
+      ctx.fillStyle = '#334155';
+      ctx.fillText('IIT FOUNDATION OMR ANSWER SHEET • CLASSES 6TH TO 10TH', SHEET_W / 2, 114);
+
+      ctx.beginPath();
+      ctx.moveTo(64, 128);
+      ctx.lineTo(SHEET_W - 64, 128);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.stroke();
+
+      const layout = getTemplateLayout(state.questionCount);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.fillText('CLASS:', 78, 150);
+      ctx.fillText('PAPER SET:', 78, 200);
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(78, 250, 320, 46);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '600 10px Inter, sans-serif';
+      ctx.fillText('STUDENT NAME (BLOCK LETTERS):', 86, 265);
+      if (filledData && filledData.studentName) {
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.fillText(filledData.studentName, 86, 286);
+      }
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '500 10px Inter, sans-serif';
+      ctx.fillText('• Darken the circle completely with black/blue ballpoint pen.', 78, 322);
+      ctx.fillText('• Do not fold or mark near the 4 black corner squares.', 78, 338);
+      ctx.fillText('• Multiple marks for one question will be treated as invalid.', 78, 354);
+
+      layout.classBubbles.forEach(b => {
+        drawBubble(ctx, b.x, b.y, b.r, b.shortLabel, filledData && filledData.classLabel === b.label);
+      });
+
+      layout.setBubbles.forEach(b => {
+        drawBubble(ctx, b.x, b.y, b.r, b.label, filledData && filledData.set === b.label);
+      });
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.strokeRect(470, 136, 200, 232);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ROLL NUMBER (4 DIGITS)', 570, 150);
+
+      layout.rollBubbles.forEach((colArr, colIdx) => {
+        colArr.forEach(b => {
+          const isFilled = filledData && Number(filledData.roll[colIdx]) === b.digit;
+          drawBubble(ctx, b.x, b.y, b.r, String(b.digit), isFilled);
+        });
+      });
+
+      const subjTitles = ['MATHEMATICS', 'PHYSICS', 'CHEMISTRY'];
+      const colStartX = [78, 318, 558];
+      subjTitles.forEach((title, idx) => {
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fillRect(colStartX[idx] - 6, 390, 210, 26);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, colStartX[idx] + 99, 407);
+      });
+
+      layout.questions.forEach((q, qIdx) => {
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${q.qNum}.`, q.labelX + 24, q.y + 4);
+
+        const markedOpts = filledData ? (filledData.answers[qIdx] || []) : [];
+        q.options.forEach(opt => {
+          drawBubble(ctx, opt.x, opt.y, opt.r, opt.option, markedOpts.includes(opt.option));
+        });
+      });
+
+      ctx.restore();
+
+      if (addNoise) {
+        const imgData = ctx.getImageData(0, 0, SHEET_W, SHEET_H);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = (Math.random() - 0.5) * 18;
+          d[i] = Math.min(255, Math.max(0, d[i] + n));
+          d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + n));
+          d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + n));
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+    }
+
+    function drawBubble(ctx, x, y, r, label, filled) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      if (filled) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+        ctx.fillStyle = '#475569';
+        ctx.font = '600 9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y + 0.5);
+        ctx.textBaseline = 'alphabetic';
+      }
+    }
+
+    // =========================================================================
+    // COMPUTER VISION OMR SCANNER ENGINE
+    // =========================================================================
+    function findCornerMarker(gray, w, h, qx0, qy0, qx1, qy1) {
+      let sumX = 0, sumY = 0, count = 0;
+      const darkThresh = 95;
+      for (let y = qy0; y < qy1; y++) {
+        for (let x = qx0; x < qx1; x++) {
+          if (gray[y * w + x] < darkThresh) {
+            let neighbors = 0;
+            for (let dy = -2; dy <= 2; dy += 2) {
+              for (let dx = -2; dx <= 2; dx += 2) {
+                const ny = y + dy, nx = x + dx;
+                if (ny >= 0 && ny < h && nx >= 0 && nx < w && gray[ny * w + nx] < darkThresh) {
+                  neighbors++;
+                }
+              }
+            }
+            if (neighbors >= 6) {
+              sumX += x;
+              sumY += y;
+              count++;
+            }
+          }
+        }
+      }
+      if (count < 20) return null;
+      return { x: sumX / count, y: sumY / count };
+    }
+
+    function alignAndExtractSheet(img) {
+      const srcCanvas = document.createElement('canvas');
+      srcCanvas.width = img.width;
+      srcCanvas.height = img.height;
+      const srcCtx = srcCanvas.getContext('2d');
+      srcCtx.drawImage(img, 0, 0);
+      const srcData = srcCtx.getImageData(0, 0, img.width, img.height);
+      const w = img.width, h = img.height;
+
+      const gray = new Uint8Array(w * h);
+      for (let i = 0, p = 0; i < srcData.data.length; i += 4, p++) {
+        gray[p] = (srcData.data[i] * 0.299 + srcData.data[i + 1] * 0.587 + srcData.data[i + 2] * 0.114) | 0;
+      }
+
+      const rx = Math.floor(w * 0.14);
+      const ry = Math.floor(h * 0.12);
+      const tl = findCornerMarker(gray, w, h, 0, 0, rx, ry);
+      const tr = findCornerMarker(gray, w, h, w - rx, 0, w, ry);
+      const bl = findCornerMarker(gray, w, h, 0, h - ry, rx, h);
+      const br = findCornerMarker(gray, w, h, w - rx, h - ry, w, h);
+
+      const alignedCanvas = document.createElement('canvas');
+      alignedCanvas.width = SHEET_W;
+      alignedCanvas.height = SHEET_H;
+      const aCtx = alignedCanvas.getContext('2d');
+
+      if (tl && tr && bl && br) {
+        const outImg = aCtx.createImageData(SHEET_W, SHEET_H);
+        const f0 = FIDUCIALS[0], f1 = FIDUCIALS[1], f2 = FIDUCIALS[2];
+        const spanX = f1.x - f0.x;
+        const spanY = f2.y - f0.y;
+
+        for (let y = 0; y < SHEET_H; y++) {
+          const v = (y - f0.y) / spanY;
+          for (let x = 0; x < SHEET_W; x++) {
+            const u = (x - f0.x) / spanX;
+            const sx = (1 - u) * (1 - v) * tl.x + u * (1 - v) * tr.x + (1 - u) * v * bl.x + u * v * br.x;
+            const sy = (1 - u) * (1 - v) * tl.y + u * (1 - v) * tr.y + (1 - u) * v * bl.y + u * v * br.y;
+            const ix = Math.round(sx);
+            const iy = Math.round(sy);
+            const dstIdx = (y * SHEET_W + x) * 4;
+            if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
+              const sIdx = (iy * w + ix) * 4;
+              outImg.data[dstIdx] = srcData.data[sIdx];
+              outImg.data[dstIdx + 1] = srcData.data[sIdx + 1];
+              outImg.data[dstIdx + 2] = srcData.data[sIdx + 2];
+              outImg.data[dstIdx + 3] = 255;
+            } else {
+              outImg.data[dstIdx] = 255;
+              outImg.data[dstIdx + 1] = 255;
+              outImg.data[dstIdx + 2] = 255;
+              outImg.data[dstIdx + 3] = 255;
+            }
+          }
+        }
+        aCtx.putImageData(outImg, 0, 0);
+        return { canvas: alignedCanvas, alignedByMarkers: true };
+      } else {
+        aCtx.drawImage(img, 0, 0, SHEET_W, SHEET_H);
+        return { canvas: alignedCanvas, alignedByMarkers: false };
+      }
+    }
+
+    function measureBubbleFill(imgData, cx, cy, r) {
+      const sampleR = Math.max(3, r * 0.72);
+      const rSq = sampleR * sampleR;
+      let total = 0;
+      let dark = 0;
+      const x0 = Math.floor(cx - sampleR);
+      const x1 = Math.ceil(cx + sampleR);
+      const y0 = Math.floor(cy - sampleR);
+      const y1 = Math.ceil(cy + sampleR);
+
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          if (x < 0 || x >= SHEET_W || y < 0 || y >= SHEET_H) continue;
+          const dx = x - cx, dy = y - cy;
+          if (dx * dx + dy * dy <= rSq) {
+            const idx = (y * SHEET_W + x) * 4;
+            const lum = imgData.data[idx] * 0.299 + imgData.data[idx + 1] * 0.587 + imgData.data[idx + 2] * 0.114;
+            total++;
+            if (lum < 135) dark++;
+          }
+        }
+      }
+      return total > 0 ? dark / total : 0;
+    }
+
+    function scanAndGradeImage(img, filename) {
+      const { canvas: alignedCanvas, alignedByMarkers } = alignAndExtractSheet(img);
+      const ctx = alignedCanvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, SHEET_W, SHEET_H);
+      const layout = getTemplateLayout(state.questionCount);
+      const thresh = state.fillThreshold;
+
+      let detectedClass = state.targetClass;
+      let bestClassFill = thresh;
+      layout.classBubbles.forEach(b => {
+        const fill = measureBubbleFill(imgData, b.x, b.y, b.r);
+        if (fill > bestClassFill) {
+          bestClassFill = fill;
+          detectedClass = b.label;
+        }
+      });
+
+      let detectedSet = state.activeKeySet;
+      let bestSetFill = thresh;
+      layout.setBubbles.forEach(b => {
+        const fill = measureBubbleFill(imgData, b.x, b.y, b.r);
+        if (fill > bestSetFill) {
+          bestSetFill = fill;
+          detectedSet = b.label;
+        }
+      });
+
+      let rollDigits = [];
+      layout.rollBubbles.forEach(colArr => {
+        let bestDigit = '?';
+        let bestFill = thresh;
+        colArr.forEach(b => {
+          const fill = measureBubbleFill(imgData, b.x, b.y, b.r);
+          if (fill > bestFill) {
+            bestFill = fill;
+            bestDigit = String(b.digit);
+          }
+        });
+        rollDigits.push(bestDigit);
+      });
+      const rollNo = rollDigits.join('');
+
+      const detectedAnswers = layout.questions.map(q => {
+        const filledOpts = [];
+        q.options.forEach(opt => {
+          const fill = measureBubbleFill(imgData, opt.x, opt.y, opt.r);
+          if (fill >= thresh) {
+            filledOpts.push(opt.option);
+          }
+        });
+        return filledOpts;
+      });
+
+      const resultObj = {
+        id: 'res_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        filename,
+        alignedByMarkers,
+        rollNo,
+        classLabel: detectedClass,
+        set: detectedSet,
+        detectedAnswers,
+        alignedDataUrl: alignedCanvas.toDataURL('image/png')
+      };
+
+      computeScoreForResult(resultObj);
+      state.results.unshift(resultObj);
+      state.selectedResultId = resultObj.id;
+
+      // Increment school scan usage counter
+      if (state.session && state.session.role === 'school') {
+        const sch = state.schools.find(s => s.id === state.session.schoolId);
+        if (sch) {
+          sch.scansCount += 1;
+          logActivity(sch.name, `Scanned & graded Roll No ${rollNo} (${detectedClass})`);
+        }
+      }
+
+      renderScorecard(resultObj);
+      renderInspectionOverlay(resultObj);
+      renderResultsTable();
+      updateNavCount();
+
+      return resultObj;
+    }
+
+    function computeScoreForResult(res) {
+      const key = state.answerKeys[res.set] || state.answerKeys['A'];
+      const qCount = state.questionCount;
+      const perSubj = qCount / 3;
+      const pos = Number(state.posMarks) || 0;
+      const neg = Number(state.negMarks) || 0;
+
+      let correct = 0, wrong = 0, blank = 0, dbl = 0;
+      const subjScores = { Maths: 0, Physics: 0, Chemistry: 0 };
+      const subjMax = perSubj * pos;
+      const audit = [];
+
+      for (let i = 0; i < qCount; i++) {
+        const subj = i < perSubj ? 'Maths' : i < perSubj * 2 ? 'Physics' : 'Chemistry';
+        const chosen = res.detectedAnswers[i] || [];
+        const rightAns = key[i];
+        let status = 'blank';
+
+        if (chosen.length === 0) {
+          blank++;
+          status = 'blank';
+        } else if (chosen.length > 1) {
+          dbl++;
+          wrong++;
+          subjScores[subj] -= neg;
+          status = 'double';
+        } else if (chosen[0] === rightAns) {
+          correct++;
+          subjScores[subj] += pos;
+          status = 'correct';
+        } else {
+          wrong++;
+          subjScores[subj] -= neg;
+          status = 'wrong';
+        }
+
+        audit.push({ qNum: i + 1, chosen: chosen.join(','), rightAns, status });
+      }
+
+      res.correct = correct;
+      res.wrong = wrong;
+      res.blank = blank;
+      res.double = dbl;
+      res.subjScores = subjScores;
+      res.subjMax = subjMax;
+      res.totalMarks = subjScores.Maths + subjScores.Physics + subjScores.Chemistry;
+      res.maxMarks = qCount * pos;
+      const attempted = correct + wrong;
+      res.accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+      res.audit = audit;
+    }
+
+    // =========================================================================
+    // UI RENDERING: SCORECARD & VISUAL INSPECTION OVERLAY
+    // =========================================================================
+    function renderScorecard(res) {
+      document.getElementById('scorecard-panel').classList.remove('hidden');
+      document.getElementById('sc-roll').textContent = res.rollNo;
+      document.getElementById('sc-class').textContent = res.classLabel;
+      document.getElementById('sc-set').textContent = res.set;
+      document.getElementById('sc-filename').textContent = res.filename;
+      document.getElementById('sc-total').textContent = `${res.totalMarks} / ${res.maxMarks}`;
+      document.getElementById('sc-percent').textContent = `${res.accuracy}% Accuracy`;
+      document.getElementById('sc-correct').textContent = res.correct;
+      document.getElementById('sc-wrong').textContent = res.wrong;
+      document.getElementById('sc-blank').textContent = res.blank;
+      document.getElementById('sc-double').textContent = res.double;
+      document.getElementById('sc-edit-roll').value = res.rollNo;
+
+      const subjContainer = document.getElementById('sc-subjects');
+      subjContainer.innerHTML = ['Maths', 'Physics', 'Chemistry'].map(s => `
+        <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 text-center">
+          <div class="text-[11px] font-semibold text-slate-600">${s}</div>
+          <div class="text-sm font-extrabold text-blue-900">${res.subjScores[s]} <span class="text-[10px] font-normal text-slate-500">/ ${res.subjMax}</span></div>
+        </div>
+      `).join('');
+
+      const strip = document.getElementById('question-audit-strip');
+      const grid = document.getElementById('question-audit-grid');
+      strip.classList.remove('hidden');
+      grid.innerHTML = res.audit.map(a => {
+        const badgeCls =
+          a.status === 'correct' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+          a.status === 'wrong' ? 'bg-rose-100 text-rose-800 border-rose-200' :
+          a.status === 'double' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+          'bg-slate-100 text-slate-600 border-slate-200';
+        return `<div class="border rounded-lg px-1.5 py-1 text-center text-[10px] font-semibold ${badgeCls}" title="Q${a.qNum}: Marked ${a.chosen || 'Blank'} | Key ${a.rightAns}">
+          Q${a.qNum}: ${a.chosen || '-'}
+        </div>`;
+      }).join('');
+    }
+
+    function renderInspectionOverlay(res) {
+      const canvas = document.getElementById('inspection-canvas');
+      canvas.width = SHEET_W;
+      canvas.height = SHEET_H;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, SHEET_W, SHEET_H);
+        const layout = getTemplateLayout(state.questionCount);
+
+        layout.questions.forEach((q, idx) => {
+          const auditItem = res.audit[idx];
+          if (!auditItem) return;
+          q.options.forEach(opt => {
+            const isChosen = (res.detectedAnswers[idx] || []).includes(opt.option);
+            const isKey = auditItem.rightAns === opt.option;
+
+            if (isChosen && auditItem.status === 'correct') {
+              drawOverlayRing(ctx, opt.x, opt.y, opt.r + 3, '#10b981', 2.5);
+            } else if (isChosen && auditItem.status === 'wrong') {
+              drawOverlayRing(ctx, opt.x, opt.y, opt.r + 3, '#f43f5e', 2.5);
+            } else if (isChosen && auditItem.status === 'double') {
+              drawOverlayRing(ctx, opt.x, opt.y, opt.r + 3, '#f59e0b', 2.5);
+            } else if (!isChosen && isKey && auditItem.status !== 'correct') {
+              drawOverlayRing(ctx, opt.x, opt.y, opt.r + 3, '#2563eb', 2);
+            }
+          });
+        });
+
+        document.getElementById('scan-status-text').textContent =
+          res.alignedByMarkers
+            ? `Corner markers detected & deskewed • Roll No ${res.rollNo} graded (${res.totalMarks}/${res.maxMarks})`
+            : `Loaded directly • Roll No ${res.rollNo} graded (${res.totalMarks}/${res.maxMarks})`;
+      };
+      img.src = res.alignedDataUrl;
+    }
+
+    function drawOverlayRing(ctx, x, y, r, color, lw) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.stroke();
+    }
+
+    // =========================================================================
+    // ANSWER KEY EDITOR RENDERING
+    // =========================================================================
+    function renderAnswerKeyGrid() {
+      const container = document.getElementById('answer-key-grid');
+      const qCount = state.questionCount;
+      const perSubj = qCount / 3;
+      const key = state.answerKeys[state.activeKeySet];
+      const subjects = [
+        { name: 'Mathematics', start: 0 },
+        { name: 'Physics', start: perSubj },
+        { name: 'Chemistry', start: perSubj * 2 }
+      ];
+
+      container.innerHTML = subjects.map(subj => {
+        let rows = '';
+        for (let i = 0; i < perSubj; i++) {
+          const qIdx = subj.start + i;
+          const current = key[qIdx];
+          const btns = OPTIONS.map(opt => {
+            const active = current === opt;
+            return `<button type="button" data-qidx="${qIdx}" data-opt="${opt}" class="key-opt-btn w-7 h-7 rounded-full text-xs font-bold border transition ${
+              active ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
+            }">${opt}</button>`;
+          }).join('');
+          rows += `<div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-none">
+            <span class="text-xs font-bold text-slate-700 w-9">Q${qIdx + 1}</span>
+            <div class="flex items-center gap-1.5">${btns}</div>
+          </div>`;
+        }
+        return `<div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-blue-900 mb-2 pb-1.5 border-b border-slate-200">${subj.name} (Q${subj.start + 1}–Q${subj.start + perSubj})</h3>
+          <div>${rows}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function updateExamBanner() {
+      document.getElementById('banner-exam-title').textContent = state.examTitle;
+      document.getElementById('banner-class').textContent = state.targetClass;
+      document.getElementById('banner-qcount').textContent = state.questionCount;
+      const negTxt = Number(state.negMarks) > 0 ? `-${state.negMarks}` : '0';
+      document.getElementById('banner-marking').textContent = `+${state.posMarks} / ${negTxt}`;
+    }
+
+    function regradeAllResults() {
+      state.results.forEach(res => computeScoreForResult(res));
+      if (state.selectedResultId) {
+        const current = state.results.find(r => r.id === state.selectedResultId);
+        if (current) {
+          renderScorecard(current);
+          renderInspectionOverlay(current);
+        }
+      }
+      renderResultsTable();
+    }
+
+    // =========================================================================
+    // RESULTS TABLE & CHART
+    // =========================================================================
+    function updateNavCount() {
+      document.getElementById('nav-result-count').textContent = state.results.length;
+    }
+
+    function renderResultsTable() {
+      const search = document.getElementById('filter-search').value.trim().toLowerCase();
+      const clsFilter = document.getElementById('filter-class').value;
+
+      const sorted = [...state.results].sort((a, b) => b.totalMarks - a.totalMarks);
+      const filtered = sorted.filter(r => {
+        const matchSearch = !search || r.rollNo.toLowerCase().includes(search);
+        const matchCls = clsFilter === 'ALL' || r.classLabel === clsFilter;
+        return matchSearch && matchCls;
+      });
+
+      const tbody = document.getElementById('results-tbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="py-8 text-center text-slate-400">No matching scanned student results found.</td></tr>`;
+      } else {
+        tbody.innerHTML = filtered.map((r, idx) => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-2.5 px-2 font-bold text-slate-700">#${idx + 1}</td>
+            <td class="py-2.5 px-2 font-bold text-blue-800">${r.rollNo}</td>
+            <td class="py-2.5 px-2 text-slate-600">${r.classLabel}</td>
+            <td class="py-2.5 px-2 font-semibold">${r.set}</td>
+            <td class="py-2.5 px-2">${r.subjScores.Maths}</td>
+            <td class="py-2.5 px-2">${r.subjScores.Physics}</td>
+            <td class="py-2.5 px-2">${r.subjScores.Chemistry}</td>
+            <td class="py-2.5 px-2 font-extrabold text-slate-900">${r.totalMarks}/${r.maxMarks}</td>
+            <td class="py-2.5 px-2 text-slate-500">${r.correct}/${r.wrong}/${r.blank}</td>
+            <td class="py-2.5 px-2 text-right">
+              <button type="button" data-view-id="${r.id}" class="view-scan-btn text-blue-700 hover:underline font-semibold">Inspect</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      const count = filtered.length;
+      document.getElementById('kpi-count').textContent = count;
+      if (count > 0) {
+        const avg = (filtered.reduce((s, r) => s + r.totalMarks, 0) / count).toFixed(1);
+        const high = Math.max(...filtered.map(r => r.totalMarks));
+        const acc = Math.round(filtered.reduce((s, r) => s + r.accuracy, 0) / count);
+        document.getElementById('kpi-avg').textContent = avg;
+        document.getElementById('kpi-high').textContent = high;
+        document.getElementById('kpi-acc').textContent = `${acc}%`;
+      } else {
+        document.getElementById('kpi-avg').textContent = '0';
+        document.getElementById('kpi-high').textContent = '0';
+        document.getElementById('kpi-acc').textContent = '0%';
+      }
+
+      updateSubjectChart(filtered);
+    }
+
+    function updateSubjectChart(list) {
+      const ctx = document.getElementById('subject-chart').getContext('2d');
+      const count = list.length;
+      const mAvg = count ? +(list.reduce((s, r) => s + r.subjScores.Maths, 0) / count).toFixed(1) : 0;
+      const pAvg = count ? +(list.reduce((s, r) => s + r.subjScores.Physics, 0) / count).toFixed(1) : 0;
+      const cAvg = count ? +(list.reduce((s, r) => s + r.subjScores.Chemistry, 0) / count).toFixed(1) : 0;
+
+      if (state.chartInstance) {
+        state.chartInstance.data.datasets[0].data = [mAvg, pAvg, cAvg];
+        state.chartInstance.update();
+        return;
+      }
+
+      state.chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Mathematics', 'Physics', 'Chemistry'],
+          datasets: [{
+            label: 'Average Marks',
+            data: [mAvg, pAvg, cAvg],
+            backgroundColor: ['#1d4ed8', '#0284c7', '#0d9488'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    // =========================================================================
+    // TAB SWITCHING & FILE HANDLERS
+    // =========================================================================
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        if (b.dataset.tab === tabName) {
+          b.classList.add('active');
+          b.classList.remove('text-slate-700');
+        } else {
+          b.classList.remove('active');
+          b.classList.add('text-slate-700');
+        }
+      });
+
+      document.querySelectorAll('.mobile-nav-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tabName);
+      });
+
+      if (tabName === 'print') {
+        renderOMRSheetToCanvas(document.getElementById('blank-omr-canvas'));
+      } else if (tabName === 'results') {
+        renderResultsTable();
+      } else if (tabName === 'admin') {
+        renderAdminPanel();
+      }
+    }
+
+    function handleFilesUpload(files) {
+      if (!files || files.length === 0) return;
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            scanAndGradeImage(img, file.name);
+            showToast(`Graded ${file.name}`);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function generateAndScanTestSheet() {
+      const offscreen = document.createElement('canvas');
+      const key = state.answerKeys[state.activeKeySet];
+      const roll = String(Math.floor(1000 + Math.random() * 8999));
+      const answers = [];
+      for (let i = 0; i < state.questionCount; i++) {
+        const r = Math.random();
+        if (r < 0.72) {
+          answers.push([key[i]]);
+        } else if (r < 0.90) {
+          const wrongOpts = OPTIONS.filter(o => o !== key[i]);
+          answers.push([wrongOpts[Math.floor(Math.random() * wrongOpts.length)]]);
+        } else if (r < 0.96) {
+          answers.push([]);
+        } else {
+          answers.push(['A', 'C']);
+        }
+      }
+
+      const skew = (Math.random() * 2.4 - 1.2);
+      renderOMRSheetToCanvas(offscreen, {
+        filledData: {
+          classLabel: state.targetClass,
+          set: state.activeKeySet,
+          roll,
+          studentName: `STUDENT ${roll}`,
+          answers
+        },
+        skewDeg: skew,
+        addNoise: true
+      });
+
+      const img = new Image();
+      img.onload = () => {
+        scanAndGradeImage(img, `PrinterScan_${roll}.png`);
+        showToast(`Scanned Roll No ${roll} (${skew.toFixed(1)}° deskewed)`);
+      };
+      img.src = offscreen.toDataURL('image/png');
+    }
+
+    // =========================================================================
+    // BOOTSTRAP
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPortalData();
+      initAnswerKeys();
+      populateSchoolDatalist();
+      renderAnswerKeyGrid();
+      updateExamBanner();
+      renderOMRSheetToCanvas(document.getElementById('inspection-canvas'));
+
+      // Restore active session if available
+      if (state.session) {
+        enterAppSession(state.session);
+      }
+
+      // Auth Mode Switching
+      const btnModeSchool = document.getElementById('auth-mode-school');
+      const btnModeOwner = document.getElementById('auth-mode-owner');
+      const formSchool = document.getElementById('form-school-login');
+      const formOwner = document.getElementById('form-owner-login');
+      const formForgot = document.getElementById('form-forgot-otp');
+
+      function showAuthView(view) {
+        formSchool.classList.add('hidden');
+        formOwner.classList.add('hidden');
+        formForgot.classList.add('hidden');
+        if (view === 'school') {
+          formSchool.classList.remove('hidden');
+          btnModeSchool.classList.add('bg-white', 'text-blue-800', 'shadow-sm');
+          btnModeOwner.classList.remove('bg-white', 'text-blue-800', 'shadow-sm');
+        } else if (view === 'owner') {
+          formOwner.classList.remove('hidden');
+          btnModeOwner.classList.add('bg-white', 'text-blue-800', 'shadow-sm');
+          btnModeSchool.classList.remove('bg-white', 'text-blue-800', 'shadow-sm');
+        } else {
+          formForgot.classList.remove('hidden');
+        }
+      }
+
+      btnModeSchool.addEventListener('click', () => showAuthView('school'));
+      btnModeOwner.addEventListener('click', () => showAuthView('owner'));
+      document.getElementById('btn-open-forgot').addEventListener('click', () => {
+        document.getElementById('otp-step-1').classList.remove('hidden');
+        document.getElementById('otp-step-2').classList.add('hidden');
+        showAuthView('forgot');
+      });
+      document.getElementById('btn-back-login').addEventListener('click', () => showAuthView('school'));
+
+      // Demo Auto-fill buttons
+      document.getElementById('btn-demo-school').addEventListener('click', () => {
+        document.getElementById('login-school-name').value = 'Padmalaya High School';
+        document.getElementById('login-school-email').value = 'admin@padmalaya.edu.in';
+        document.getElementById('login-school-pass').value = 'padma123';
+      });
+      document.getElementById('btn-demo-owner').addEventListener('click', () => {
+        document.getElementById('login-owner-email').value = 'owner@omrportal.in';
+        document.getElementById('login-owner-pass').value = 'admin123';
+      });
+
+      // School Login Submit
+      formSchool.addEventListener('submit', e => {
+        e.preventDefault();
+        const name = document.getElementById('login-school-name').value.trim().toLowerCase();
+        const email = document.getElementById('login-school-email').value.trim().toLowerCase();
+        const pass = document.getElementById('login-school-pass').value;
+        const errEl = document.getElementById('school-login-error');
+
+        const match = state.schools.find(s =>
+          s.email.toLowerCase() === email &&
+          s.name.toLowerCase() === name &&
+          s.password === pass
+        );
+
+        if (!match) {
+          errEl.textContent = 'Invalid School Name, Mail ID, or Password.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (!match.active) {
+          errEl.textContent = 'This school account is currently suspended by the App Owner.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        errEl.classList.add('hidden');
+        match.lastLogin = 'Today, ' + formatNowTime();
+        match.lastDevice = detectDeviceLabel();
+        logActivity(match.name, 'Logged into OMR Scanner');
+        enterAppSession({ role: 'school', schoolId: match.id, schoolName: match.name, email: match.email });
+        showToast(`Welcome, ${match.name}`);
+      });
+
+      // Owner Login Submit
+      formOwner.addEventListener('submit', e => {
+        e.preventDefault();
+        const email = document.getElementById('login-owner-email').value.trim().toLowerCase();
+        const pass = document.getElementById('login-owner-pass').value;
+        const errEl = document.getElementById('owner-login-error');
+
+        if (email === 'owner@omrportal.in' && pass === 'admin123') {
+          errEl.classList.add('hidden');
+          enterAppSession({ role: 'owner', schoolId: null, schoolName: 'App Owner', email });
+          showToast('Logged in to Owner Admin Panel');
+        } else {
+          errEl.textContent = 'Invalid Owner Email or Master Password.';
+          errEl.classList.remove('hidden');
+        }
+      });
+
+      // Forgot Password OTP Step 1: Send OTP
+      document.getElementById('btn-send-otp').addEventListener('click', () => {
+        const email = document.getElementById('otp-email-input').value.trim().toLowerCase();
+        const errEl = document.getElementById('otp-step1-err');
+        const school = state.schools.find(s => s.email.toLowerCase() === email);
+        if (!school) {
+          errEl.textContent = 'No school registered with this Mail ID.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        errEl.classList.add('hidden');
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        state.pendingOtp = { email, code, schoolId: school.id };
+
+        document.getElementById('otp-found-school').textContent = school.name;
+        document.getElementById('otp-preview-code').textContent = code;
+        document.getElementById('otp-step-1').classList.add('hidden');
+        document.getElementById('otp-step-2').classList.remove('hidden');
+        showToast(`OTP sent to ${email}`);
+      });
+
+      // Forgot Password OTP Step 2: Verify & Reset Password
+      document.getElementById('btn-verify-reset').addEventListener('click', () => {
+        const enteredCode = document.getElementById('otp-code-input').value.trim();
+        const newPass = document.getElementById('otp-new-pass').value;
+        const errEl = document.getElementById('otp-step2-err');
+
+        if (!state.pendingOtp || enteredCode !== state.pendingOtp.code) {
+          errEl.textContent = 'Incorrect 6-digit OTP.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (newPass.length < 6) {
+          errEl.textContent = 'New password must be at least 6 characters.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        const school = state.schools.find(s => s.id === state.pendingOtp.schoolId);
+        if (school) {
+          school.password = newPass;
+          school.lastLogin = 'Today, ' + formatNowTime();
+          school.lastDevice = detectDeviceLabel();
+          logActivity(school.name, 'Reset password via Email OTP & re-logged in');
+          state.pendingOtp = null;
+          errEl.classList.add('hidden');
+          enterAppSession({ role: 'school', schoolId: school.id, schoolName: school.name, email: school.email });
+          showToast('Password updated & logged in!');
+        }
+      });
+
+      // Logout
+      document.getElementById('btn-logout').addEventListener('click', logoutSession);
+
+      // Admin Panel: Toggle School Active/Suspended
+      document.getElementById('admin-schools-tbody').addEventListener('click', e => {
+        const btn = e.target.closest('.toggle-school-btn');
+        if (!btn) return;
+        const sch = state.schools.find(s => s.id === btn.dataset.toggleSchool);
+        if (sch) {
+          sch.active = !sch.active;
+          savePortalData();
+          renderAdminPanel();
+          showToast(`${sch.name} is now ${sch.active ? 'Active' : 'Suspended'}`);
+        }
+      });
+
+      // Admin Panel: Add New School Modal
+      const addModal = document.getElementById('add-school-modal');
+      document.getElementById('btn-open-add-school').addEventListener('click', () => {
+        addModal.classList.remove('hidden');
+        addModal.classList.add('flex');
+      });
+      document.getElementById('btn-cancel-add-school').addEventListener('click', () => {
+        addModal.classList.add('hidden');
+        addModal.classList.remove('flex');
+      });
+      document.getElementById('form-add-school').addEventListener('submit', e => {
+        e.preventDefault();
+        const name = document.getElementById('new-school-name').value.trim();
+        const email = document.getElementById('new-school-email').value.trim().toLowerCase();
+        const password = document.getElementById('new-school-pass').value;
+        if (!name || !email || !password) return;
+
+        state.schools.unshift({
+          id: 'sch_' + Date.now(),
+          name,
+          email,
+          password,
+          active: true,
+          scansCount: 0,
+          lastLogin: 'Never',
+          lastDevice: '-'
+        });
+        logActivity(name, 'Registered by App Owner');
+        populateSchoolDatalist();
+        renderAdminPanel();
+        addModal.classList.add('hidden');
+        addModal.classList.remove('flex');
+        e.target.reset();
+        showToast(`Added ${name}`);
+      });
+
+      // Tab buttons (Desktop + Mobile)
+      document.querySelectorAll('.tab-btn, .mobile-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+      document.getElementById('btn-go-key').addEventListener('click', () => switchTab('key'));
+
+      // File upload & drag/drop
+      const fileInput = document.getElementById('omr-file-input');
+      fileInput.addEventListener('change', e => {
+        handleFilesUpload(e.target.files);
+        e.target.value = '';
+      });
+
+      const dropZone = document.getElementById('drop-zone');
+      dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('bg-blue-100');
+      });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('bg-blue-100'));
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('bg-blue-100');
+        handleFilesUpload(e.dataTransfer.files);
+      });
+
+      document.getElementById('btn-generate-sample').addEventListener('click', generateAndScanTestSheet);
+
+      const slider = document.getElementById('fill-threshold-slider');
+      slider.addEventListener('input', e => {
+        const val = Number(e.target.value);
+        state.fillThreshold = val / 100;
+        document.getElementById('threshold-val-label').textContent = `${val}% Fill`;
+      });
+
+      document.getElementById('btn-save-roll').addEventListener('click', () => {
+        const newRoll = document.getElementById('sc-edit-roll').value.trim();
+        if (!newRoll || !state.selectedResultId) return;
+        const res = state.results.find(r => r.id === state.selectedResultId);
+        if (res) {
+          res.rollNo = newRoll;
+          renderScorecard(res);
+          renderResultsTable();
+          showToast(`Updated Roll No to ${newRoll}`);
+        }
+      });
+
+      document.getElementById('cfg-exam-title').addEventListener('input', e => {
+        state.examTitle = e.target.value || 'IIT Foundation Weekly Test';
+        updateExamBanner();
+      });
+      document.getElementById('cfg-class').addEventListener('change', e => {
+        state.targetClass = e.target.value;
+        updateExamBanner();
+      });
+      document.getElementById('cfg-qcount').addEventListener('change', e => {
+        state.questionCount = Number(e.target.value);
+        updateExamBanner();
+        renderAnswerKeyGrid();
+        regradeAllResults();
+      });
+      document.getElementById('cfg-pos').addEventListener('input', e => {
+        state.posMarks = Number(e.target.value);
+        updateExamBanner();
+        regradeAllResults();
+      });
+      document.getElementById('cfg-neg').addEventListener('input', e => {
+        state.negMarks = Number(e.target.value);
+        updateExamBanner();
+        regradeAllResults();
+      });
+
+      document.querySelectorAll('.set-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeKeySet = btn.dataset.set;
+          document.querySelectorAll('.set-tab-btn').forEach(b => {
+            if (b.dataset.set === state.activeKeySet) {
+              b.classList.add('bg-blue-700', 'text-white');
+              b.classList.remove('text-slate-600');
+            } else {
+              b.classList.remove('bg-blue-700', 'text-white');
+              b.classList.add('text-slate-600');
+            }
+          });
+          renderAnswerKeyGrid();
+        });
+      });
+
+      document.getElementById('answer-key-grid').addEventListener('click', e => {
+        const btn = e.target.closest('.key-opt-btn');
+        if (!btn) return;
+        const qIdx = Number(btn.dataset.qidx);
+        const opt = btn.dataset.opt;
+        state.answerKeys[state.activeKeySet][qIdx] = opt;
+        renderAnswerKeyGrid();
+        regradeAllResults();
+      });
+
+      document.getElementById('btn-randomize-key').addEventListener('click', () => {
+        state.answerKeys[state.activeKeySet] = Array.from({ length: 60 }, () => OPTIONS[Math.floor(Math.random() * 4)]);
+        renderAnswerKeyGrid();
+        regradeAllResults();
+        showToast(`Randomized Answer Key for Set ${state.activeKeySet}`);
+      });
+
+      document.getElementById('btn-print-omr').addEventListener('click', () => {
+        renderOMRSheetToCanvas(document.getElementById('blank-omr-canvas'));
+        window.print();
+      });
+      document.getElementById('btn-download-blank-omr').addEventListener('click', () => {
+        const c = document.getElementById('blank-omr-canvas');
+        renderOMRSheetToCanvas(c);
+        const link = document.createElement('a');
+        link.download = `IIT_Foundation_OMR_${state.questionCount}Q.png`;
+        link.href = c.toDataURL('image/png');
+        link.click();
+      });
+
+      document.getElementById('filter-search').addEventListener('input', renderResultsTable);
+      document.getElementById('filter-class').addEventListener('change', renderResultsTable);
+      document.getElementById('results-tbody').addEventListener('click', e => {
+        const btn = e.target.closest('.view-scan-btn');
+        if (!btn) return;
+        const res = state.results.find(r => r.id === btn.dataset.viewId);
+        if (res) {
+          state.selectedResultId = res.id;
+          renderScorecard(res);
+          renderInspectionOverlay(res);
+          switchTab('scan');
+        }
+      });
+
+      document.getElementById('btn-export-csv').addEventListener('click', () => {
+        if (state.results.length === 0) {
+          showToast('No results to export yet.');
+          return;
+        }
+        const headers = ['Rank', 'Roll No', 'Class', 'Set', 'Maths', 'Physics', 'Chemistry', 'Total Marks', 'Max Marks', 'Correct', 'Wrong', 'Blank', 'Accuracy %', 'Filename'];
+        const sorted = [...state.results].sort((a, b) => b.totalMarks - a.totalMarks);
+        const rows = sorted.map((r, i) => [
+          i + 1,
+          `"${r.rollNo}"`,
+          `"${r.classLabel}"`,
+          r.set,
+          r.subjScores.Maths,
+          r.subjScores.Physics,
+          r.subjScores.Chemistry,
+          r.totalMarks,
+          r.maxMarks,
+          r.correct,
+          r.wrong,
+          r.blank,
+          r.accuracy,
+          `"${r.filename}"`
+        ].join(','));
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `IIT_Foundation_Results_${state.targetClass.replace(/\s+/g, '_')}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Exported results CSV');
+      });
+
+      document.getElementById('btn-clear-results').addEventListener('click', () => {
+        if (state.results.length === 0) return;
+        openConfirmModal('Clear All Results?', 'This will remove all scanned student scorecards from the current session.', () => {
+          state.results = [];
+          state.selectedResultId = null;
+          document.getElementById('scorecard-panel').classList.add('hidden');
+          document.getElementById('question-audit-strip').classList.add('hidden');
+          renderOMRSheetToCanvas(document.getElementById('inspection-canvas'));
+          renderResultsTable();
+          updateNavCount();
+          showToast('Cleared all results');
+        });
+      });
+
+      document.getElementById('modal-cancel').addEventListener('click', closeConfirmModal);
+      document.getElementById('modal-confirm').addEventListener('click', () => {
+        if (state.pendingModalAction) state.pendingModalAction();
+        closeConfirmModal();
+      });
+    });
+  </script>
+</body>
+</html>
