@@ -296,6 +296,31 @@
               <p class="text-[11px] text-slate-500">
                 Adjusts how dark a bubble must be to count as filled. Lower for light pencil; raise for printer smudges.
               </p>
+
+              <div class="pt-3 border-t border-slate-100 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-bold text-slate-800">Grid Calibration (Custom Scans)</h4>
+                  <button type="button" id="btn-reset-cal" class="text-[11px] font-semibold text-blue-700 hover:underline">Reset</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 text-[11px]">
+                  <div>
+                    <label for="cal-ox" class="flex justify-between text-slate-600 font-medium"><span>X Shift</span><span id="cal-ox-val">0px</span></label>
+                    <input id="cal-ox" type="range" min="-60" max="60" value="0" class="w-full accent-blue-700" />
+                  </div>
+                  <div>
+                    <label for="cal-oy" class="flex justify-between text-slate-600 font-medium"><span>Y Shift</span><span id="cal-oy-val">0px</span></label>
+                    <input id="cal-oy" type="range" min="-60" max="60" value="0" class="w-full accent-blue-700" />
+                  </div>
+                  <div>
+                    <label for="cal-sx" class="flex justify-between text-slate-600 font-medium"><span>Width Scale</span><span id="cal-sx-val">100%</span></label>
+                    <input id="cal-sx" type="range" min="85" max="115" value="100" class="w-full accent-blue-700" />
+                  </div>
+                  <div>
+                    <label for="cal-sy" class="flex justify-between text-slate-600 font-medium"><span>Height Scale</span><span id="cal-sy-val">100%</span></label>
+                    <input id="cal-sy" type="range" min="85" max="115" value="100" class="w-full accent-blue-700" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Current Student Scorecard -->
@@ -729,6 +754,10 @@
       negMarks: 1,
       activeKeySet: 'A',
       fillThreshold: 0.38,
+      calibration: { offsetX: 0, offsetY: 0, scaleX: 1, scaleY: 1 },
+      lastAlignedCanvas: null,
+      lastAlignedByMarkers: false,
+      lastFilename: null,
       answerKeys: { A: [], B: [], C: [], D: [] },
       results: [],
       selectedResultId: null,
@@ -979,6 +1008,19 @@
         });
       }
 
+      const { offsetX, offsetY, scaleX, scaleY } = state.calibration;
+      if (offsetX !== 0 || offsetY !== 0 || scaleX !== 1 || scaleY !== 1) {
+        const cx = SHEET_W / 2;
+        const cy = 580;
+        const applyCal = pt => {
+          pt.x = cx + (pt.x - cx) * scaleX + offsetX;
+          pt.y = cy + (pt.y - cy) * scaleY + offsetY;
+        };
+        layout.classBubbles.forEach(applyCal);
+        layout.setBubbles.forEach(applyCal);
+        layout.rollBubbles.forEach(col => col.forEach(applyCal));
+        layout.questions.forEach(q => q.options.forEach(applyCal));
+      }
       return layout;
     }
 
@@ -1135,30 +1177,43 @@
     // COMPUTER VISION OMR SCANNER ENGINE
     // =========================================================================
     function findCornerMarker(gray, w, h, qx0, qy0, qx1, qy1) {
-      let sumX = 0, sumY = 0, count = 0;
-      const darkThresh = 95;
-      for (let y = qy0; y < qy1; y++) {
-        for (let x = qx0; x < qx1; x++) {
-          if (gray[y * w + x] < darkThresh) {
-            let neighbors = 0;
-            for (let dy = -2; dy <= 2; dy += 2) {
-              for (let dx = -2; dx <= 2; dx += 2) {
-                const ny = y + dy, nx = x + dx;
-                if (ny >= 0 && ny < h && nx >= 0 && nx < w && gray[ny * w + nx] < darkThresh) {
-                  neighbors++;
-                }
-              }
+      const box = Math.max(10, Math.round(w * 0.026));
+      const half = Math.floor(box / 2);
+      const darkThresh = 105;
+      let bestScore = 0;
+      let bestX = -1, bestY = -1;
+
+      for (let y = qy0 + half; y < qy1 - half; y += 2) {
+        for (let x = qx0 + half; x < qx1 - half; x += 2) {
+          let darkCount = 0;
+          for (let dy = -half; dy <= half; dy += 2) {
+            for (let dx = -half; dx <= half; dx += 2) {
+              if (gray[(y + dy) * w + (x + dx)] < darkThresh) darkCount++;
             }
-            if (neighbors >= 6) {
-              sumX += x;
-              sumY += y;
-              count++;
-            }
+          }
+          if (darkCount > bestScore) {
+            bestScore = darkCount;
+            bestX = x;
+            bestY = y;
           }
         }
       }
-      if (count < 20) return null;
-      return { x: sumX / count, y: sumY / count };
+
+      const expectedTotal = Math.pow(Math.floor((half * 2) / 2) + 1, 2);
+      if (bestX < 0 || bestScore < expectedTotal * 0.55) return null;
+
+      let sumX = 0, sumY = 0, cnt = 0;
+      const r = half + 2;
+      for (let y = Math.max(0, bestY - r); y <= Math.min(h - 1, bestY + r); y++) {
+        for (let x = Math.max(0, bestX - r); x <= Math.min(w - 1, bestX + r); x++) {
+          if (gray[y * w + x] < darkThresh) {
+            sumX += x;
+            sumY += y;
+            cnt++;
+          }
+        }
+      }
+      return cnt > 0 ? { x: sumX / cnt, y: sumY / cnt } : { x: bestX, y: bestY };
     }
 
     function alignAndExtractSheet(img) {
@@ -1251,6 +1306,13 @@
 
     function scanAndGradeImage(img, filename) {
       const { canvas: alignedCanvas, alignedByMarkers } = alignAndExtractSheet(img);
+      state.lastAlignedCanvas = alignedCanvas;
+      state.lastAlignedByMarkers = alignedByMarkers;
+      state.lastFilename = filename;
+      return evaluateAlignedCanvas(alignedCanvas, alignedByMarkers, filename, false);
+    }
+
+    function evaluateAlignedCanvas(alignedCanvas, alignedByMarkers, filename, replaceSelected) {
       const ctx = alignedCanvas.getContext('2d');
       const imgData = ctx.getImageData(0, 0, SHEET_W, SHEET_H);
       const layout = getTemplateLayout(state.questionCount);
@@ -1314,11 +1376,21 @@
       };
 
       computeScoreForResult(resultObj);
-      state.results.unshift(resultObj);
-      state.selectedResultId = resultObj.id;
+      if (replaceSelected && state.selectedResultId) {
+        const idx = state.results.findIndex(r => r.id === state.selectedResultId);
+        if (idx !== -1) {
+          resultObj.id = state.selectedResultId;
+          state.results[idx] = resultObj;
+        } else {
+          state.results.unshift(resultObj);
+          state.selectedResultId = resultObj.id;
+        }
+      } else {
+        state.results.unshift(resultObj);
+        state.selectedResultId = resultObj.id;
+      }
 
-      // Increment school scan usage counter
-      if (state.session && state.session.role === 'school') {
+      if (!replaceSelected && state.session && state.session.role === 'school') {
         const sch = state.schools.find(s => s.id === state.session.schoolId);
         if (sch) {
           sch.scansCount += 1;
@@ -1946,11 +2018,49 @@
 
       document.getElementById('btn-generate-sample').addEventListener('click', generateAndScanTestSheet);
 
+      function applyCalibrationAndReeval() {
+        document.getElementById('cal-ox-val').textContent = `${state.calibration.offsetX}px`;
+        document.getElementById('cal-oy-val').textContent = `${state.calibration.offsetY}px`;
+        document.getElementById('cal-sx-val').textContent = `${Math.round(state.calibration.scaleX * 100)}%`;
+        document.getElementById('cal-sy-val').textContent = `${Math.round(state.calibration.scaleY * 100)}%`;
+        if (state.lastAlignedCanvas) {
+          evaluateAlignedCanvas(state.lastAlignedCanvas, state.lastAlignedByMarkers, state.lastFilename, true);
+        }
+      }
+
       const slider = document.getElementById('fill-threshold-slider');
       slider.addEventListener('input', e => {
         const val = Number(e.target.value);
         state.fillThreshold = val / 100;
         document.getElementById('threshold-val-label').textContent = `${val}% Fill`;
+        if (state.lastAlignedCanvas) {
+          evaluateAlignedCanvas(state.lastAlignedCanvas, state.lastAlignedByMarkers, state.lastFilename, true);
+        }
+      });
+
+      document.getElementById('cal-ox').addEventListener('input', e => {
+        state.calibration.offsetX = Number(e.target.value);
+        applyCalibrationAndReeval();
+      });
+      document.getElementById('cal-oy').addEventListener('input', e => {
+        state.calibration.offsetY = Number(e.target.value);
+        applyCalibrationAndReeval();
+      });
+      document.getElementById('cal-sx').addEventListener('input', e => {
+        state.calibration.scaleX = Number(e.target.value) / 100;
+        applyCalibrationAndReeval();
+      });
+      document.getElementById('cal-sy').addEventListener('input', e => {
+        state.calibration.scaleY = Number(e.target.value) / 100;
+        applyCalibrationAndReeval();
+      });
+      document.getElementById('btn-reset-cal').addEventListener('click', () => {
+        state.calibration = { offsetX: 0, offsetY: 0, scaleX: 1, scaleY: 1 };
+        document.getElementById('cal-ox').value = 0;
+        document.getElementById('cal-oy').value = 0;
+        document.getElementById('cal-sx').value = 100;
+        document.getElementById('cal-sy').value = 100;
+        applyCalibrationAndReeval();
       });
 
       document.getElementById('btn-save-roll').addEventListener('click', () => {
