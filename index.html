@@ -305,19 +305,19 @@
                 <div class="grid grid-cols-2 gap-2.5 text-[11px]">
                   <div>
                     <label for="cal-ox" class="flex justify-between text-slate-600 font-medium"><span>X Shift</span><span id="cal-ox-val">0px</span></label>
-                    <input id="cal-ox" type="range" min="-60" max="60" value="0" class="w-full accent-blue-700" />
+                    <input id="cal-ox" type="range" min="-120" max="120" value="0" class="w-full accent-blue-700" />
                   </div>
                   <div>
                     <label for="cal-oy" class="flex justify-between text-slate-600 font-medium"><span>Y Shift</span><span id="cal-oy-val">0px</span></label>
-                    <input id="cal-oy" type="range" min="-60" max="60" value="0" class="w-full accent-blue-700" />
+                    <input id="cal-oy" type="range" min="-120" max="120" value="0" class="w-full accent-blue-700" />
                   </div>
                   <div>
                     <label for="cal-sx" class="flex justify-between text-slate-600 font-medium"><span>Width Scale</span><span id="cal-sx-val">100%</span></label>
-                    <input id="cal-sx" type="range" min="85" max="115" value="100" class="w-full accent-blue-700" />
+                    <input id="cal-sx" type="range" min="70" max="130" value="100" class="w-full accent-blue-700" />
                   </div>
                   <div>
                     <label for="cal-sy" class="flex justify-between text-slate-600 font-medium"><span>Height Scale</span><span id="cal-sy-val">100%</span></label>
-                    <input id="cal-sy" type="range" min="85" max="115" value="100" class="w-full accent-blue-700" />
+                    <input id="cal-sy" type="range" min="70" max="130" value="100" class="w-full accent-blue-700" />
                   </div>
                 </div>
               </div>
@@ -1076,23 +1076,19 @@
       ctx.fillText('CLASS:', 78, 150);
       ctx.fillText('PAPER SET:', 78, 200);
 
-      ctx.strokeStyle = '#94a3b8';
+      ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 1;
-      ctx.strokeRect(78, 250, 320, 46);
-      ctx.fillStyle = '#64748b';
-      ctx.font = '600 10px Inter, sans-serif';
-      ctx.fillText('STUDENT NAME (BLOCK LETTERS):', 86, 265);
-      if (filledData && filledData.studentName) {
-        ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 14px Inter, sans-serif';
-        ctx.fillText(filledData.studentName, 86, 286);
-      }
+      ctx.strokeRect(78, 248, 340, 114);
+      ctx.fillStyle = '#1e3a8a';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.fillText('IMPORTANT INSTRUCTIONS:', 90, 268);
 
       ctx.fillStyle = '#475569';
-      ctx.font = '500 10px Inter, sans-serif';
-      ctx.fillText('• Darken the circle completely with black/blue ballpoint pen.', 78, 322);
-      ctx.fillText('• Do not fold or mark near the 4 black corner squares.', 78, 338);
-      ctx.fillText('• Multiple marks for one question will be treated as invalid.', 78, 354);
+      ctx.font = '500 10.5px Inter, sans-serif';
+      ctx.fillText('• Shade your 4-digit Roll Number bubbles carefully.', 90, 290);
+      ctx.fillText('• Darken the circle completely with black/blue pen.', 90, 310);
+      ctx.fillText('• Do not fold or mark near the 4 black corner squares.', 90, 330);
+      ctx.fillText('• Multiple marks for one question are treated as invalid.', 90, 350);
 
       layout.classBubbles.forEach(b => {
         drawBubble(ctx, b.x, b.y, b.r, b.shortLabel, filledData && filledData.classLabel === b.label);
@@ -1500,14 +1496,12 @@
 
     function renderInspectionOverlay(res) {
       const canvas = document.getElementById('inspection-canvas');
-      canvas.width = SHEET_W;
-      canvas.height = SHEET_H;
+      if (canvas.width !== SHEET_W) canvas.width = SHEET_W;
+      if (canvas.height !== SHEET_H) canvas.height = SHEET_H;
       const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, SHEET_W, SHEET_H);
-        const layout = getTemplateLayout(state.questionCount);
 
+      const drawRings = () => {
+        const layout = getTemplateLayout(state.questionCount);
         layout.questions.forEach((q, idx) => {
           const auditItem = res.audit[idx];
           if (!auditItem) return;
@@ -1532,7 +1526,18 @@
             ? `Corner markers detected & deskewed • Roll No ${res.rollNo} graded (${res.totalMarks}/${res.maxMarks})`
             : `Loaded directly • Roll No ${res.rollNo} graded (${res.totalMarks}/${res.maxMarks})`;
       };
-      img.src = res.alignedDataUrl;
+
+      if (state.lastAlignedCanvas && state.selectedResultId === res.id) {
+        ctx.drawImage(state.lastAlignedCanvas, 0, 0, SHEET_W, SHEET_H);
+        drawRings();
+      } else {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, SHEET_W, SHEET_H);
+          drawRings();
+        };
+        img.src = res.alignedDataUrl;
+      }
     }
 
     function drawOverlayRing(ctx, x, y, r, color, lw) {
